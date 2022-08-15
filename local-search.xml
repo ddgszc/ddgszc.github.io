@@ -4,6 +4,25 @@
   
   
   <entry>
+    <title>shell美化</title>
+    <link href="/2022/07/23/shell%E7%BE%8E%E5%8C%96/"/>
+    <url>/2022/07/23/shell%E7%BE%8E%E5%8C%96/</url>
+    
+    <content type="html"><![CDATA[<h1 id="Shell美化"><a href="#Shell美化" class="headerlink" title="Shell美化"></a>Shell美化</h1>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>Linux</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>红队基础建设</title>
     <link href="/2022/07/21/%E7%BA%A2%E9%98%9F%E5%9F%BA%E7%A1%80%E5%BB%BA%E8%AE%BE/"/>
     <url>/2022/07/21/%E7%BA%A2%E9%98%9F%E5%9F%BA%E7%A1%80%E5%BB%BA%E8%AE%BE/</url>
@@ -25,11 +44,11 @@
   
   
   <entry>
-    <title>good</title>
+    <title>攻击面杂谈</title>
     <link href="/2022/07/10/good/"/>
     <url>/2022/07/10/good/</url>
     
-    <content type="html"><![CDATA[<h1 id="Hello-World"><a href="#Hello-World" class="headerlink" title="Hello,World"></a>Hello,World</h1><h2 id="I-can-say-good-everybody"><a href="#I-can-say-good-everybody" class="headerlink" title="I can say good.everybody."></a>I can say good.everybody.</h2>]]></content>
+    <content type="html"><![CDATA[<p>PS.转载一篇别人的攻击面杂谈，受益匪浅</p><h1 id="攻击面杂谈"><a href="#攻击面杂谈" class="headerlink" title="攻击面杂谈"></a>攻击面杂谈</h1><p>​Mac电脑用户对下面这个弹窗应该不陌生。关机前，Mac电脑会询问是否记录当前执行的程序并在下次启动后自动运行（重启后重开）。这是一个非常实用的功能，某些编辑器程序甚至可以恢复用户未主动保存的文档。如果再深入思考一下，这个功能肯定需要将当前运行的应用状态转储到磁盘，重启后再从磁盘加载信息恢复应用执行状态。这个过程是否存在安全问题？实际上，这正是Blackhat USA 2022上议题《Process Injection: Breaking All macOS Security Layers With a Single Vulnerability》的研究内容[1]。这个议题引发我的一些思考，写下此文与大家分享。</p><p><img src="/Z=Pic/image-20220815123324400.png" alt="image-20220815123324400"></p><p>​     试图对规模庞大、功能复杂的软件系统进行彻底的安全审计与漏洞挖掘是非常蛮干甚至是不切实际的想法。实践中，发现有效攻击面从而开展针对性挖掘与分析是缩减问题规模的理想方式。如果把漏洞挖掘比喻成“砍柴”，那么攻击面发现就如同“磨刀”。磨刀不误砍柴工，攻击面发现直接决定漏洞挖掘是“事倍功半”还是“事半功倍”。</p><p>​什么是攻击面发现？我的定义是：在特定威胁模型下，识别、分析和细化攻击者可控数据和可控行为的过程。举一个例子。假设目标是一个图像处理软件，那么这个软件处理攻击者可控图像文件的过程就是一个典型的攻击面。攻击面分析的一个重要任务是发现这个软件能处理的所有图像格式。通常而言，如果这个软件能处理一些罕见的、甚至是自定义的图像格式，那么这部分代码有漏洞的概率会高一些。类似的真实案例有很多。例如，2020年Mateusz Jurczyk针对三星手机彩信的0click攻击，所利用的漏洞就位于三星定制化的Qmage格式的图像解析模块中[2]。</p><p>​这个事情似乎不难实现，尤其是在当前fuzzing和符号执行技术大发展的时代。但是，软件规模和复杂性也在不断增长，图像处理也可能隐藏在海量功能点中。假设系统通过下图所示多进程架构实现图像处理：前端进程通过文件名筛选png和jpg文件存入数据库，后端进程根据数据库里的文件内容判定图像格式，进一步调用相应的格式解析函数。对这个处理流程缺乏了解的情况下，很难构画出完整的图像数据处理流程，也就很容易得出这个系统仅处理png或jpg格式的结论，以至于其他格式处理函数的攻击面被遗漏。</p><p><img src="/Z=Pic/image-20220815123409557.png" alt="image-20220815123409557"></p><p>​这不是一个臆想的架构。iMessage处理消息附件时就采用了类似的流程。NSO 针对iMessage的0click攻击 [3]，就是把一个pdf文件，修改文件名伪造成一个gif图片发送；接收方根据文件名在后台接收、保存了这个gif图像文件，但是在渲染阶段，由pdf处理函数解析这个内容；这个文件攻击了pdf处理函数中的一个漏洞，实现了0click的攻击。</p><p>​如何有效发现攻击面，在理论模型和技术实践上都还有很大的探索空间。攻击面发现与漏洞挖掘本身有很多共性的技术需求，但也有显著目标差异。实践中，依靠经验定位新的攻击面，采用自动化模糊测试针对性分析是比较理想的工作模式。攻击面发现通常遵循“分析”-“假设”-“验证”的循环过程：从粗颗粒分析某个功能特性的实现流程，到基于历史经验假设潜在的可控数据和可控行为点，再进一步详细验证。验证结果可能是前面的假设不成立，那么就需要进一步分析，寻找新的疑似攻击面；也可能是发现一个新的可控数据和可控行为，那就需要再详细挖掘这些可控主体对系统的安全影响。</p><p><img src="/Z=Pic/image-20220815123509045.png" alt="image-20220815123509045"></p><p>​我们回到开篇的案例：Mac操作系统重启后重开特性。深入思考后不难得出一个结论，这个过程中肯定存在程序状态的存储和恢复。为什么这个转储的程序状态值得关注呢？因为过往存在很多类似漏洞。例如，2017年Ian Beer发现macOS内存管理过程中，内页页面的磁盘转储文件可以被篡改。苹果公司在iOS上也犯过类似错误。为了加速App启动，iOS 13上启用了一个新的机制叫做“dyld closure”。 iOS启动后，系统会把App、dyld和动态库等资源链接好后存入一个名为.closure的缓存文件。这个closure实际上等价于App的运行时快照。App再次运行时，无需从新创建内存环境，而是加载这个closure即可。2021年，Linus Henze发现iOS上对closure文件的保存、加载和验证过程，都存在逻辑漏洞。</p><p>​鉴于这些过往漏洞，关注Mac上重启后重开中转储状态就不足为奇了。不过这个特性所涉及的程序状态信息，具体包含什么内容，保存在哪里，是否可被篡改，重新载入时是否有完整性检验，如果被篡改对程序有什么影响？这些问题是无法立刻回答的，需要深入的分析。</p><p>​这个分析过程是议题的关键。作者发现系统对转储的程序状态信息没有严格的完整性保护。通过篡改这个程序状态文件，可以在高权限进程中，在反序列化程序状态数据阶段实现任意代码执行。</p><p>​?上面的描述实际上涵盖了两个环节。一个是作者发现转储的程序状态可以被篡改，这意味着一个新的攻击面的发现。另一个环节里，作者发现了反序列化过程中的任意代码执行问题，这是传统的漏洞挖掘。</p><p>​?这个攻击面的发现并不是显而易见的。序列化的状态以AES加密的形式保存。只不过AES解密密钥保存在另一个转储文件中，也是可以被完全修改的。因此这层AES加密并没有真正起到机密性或者完整性保护的作用。只不过，如何发现这个加密过程、如何发现AES密钥保存方式这都需要深入的逆向分析。不打通这层AES就没办法理解序列化的数据，也没办法测试对数据的篡改。这个案例也比较好的诠释了通用的自动化攻击面发现的难度。</p><p>​?攻击面与业务逻辑紧密耦合。在新攻击面的发现，既依赖于漏洞研究经验，也离不开深入的底层安全分析。行业中的高手，有时候凭直觉就能挖到漏洞，“感觉那里有漏洞，看了一下果然是”。这种“指哪打哪”大抵是因为丰富的经验能快速辨别出高价值的攻击面。如何获得这种经验？自然是持续不断的底层安全分析和对业务逻辑的对抗思考。</p><p>参考资料</p><p>[1] <a href="https://i.blackhat.com/USA-22/Thursday/US-22-Alkemade-Process-Injection-Breaking-All-macOS-Security-Layers-With-a-Single-Vulnerability.pdf">https://i.blackhat.com/USA-22/Thursday/US-22-Alkemade-Process-Injection-Breaking-All-macOS-Security-Layers-With-a-Single-Vulnerability.pdf</a></p><p>[2] <a href="https://googleprojectzero.blogspot.com/2020/07/mms-exploit-part-1-introduction-to-qmage.html">https://googleprojectzero.blogspot.com/2020/07/mms-exploit-part-1-introduction-to-qmage.html</a> </p><p>[3] <a href="https://googleprojectzero.blogspot.com/2021/12/a-deep-dive-into-nso-zero-click.html">https://googleprojectzero.blogspot.com/2021/12/a-deep-dive-into-nso-zero-click.html</a></p>]]></content>
     
     
     
